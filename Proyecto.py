@@ -1,59 +1,260 @@
-#* Rafael Díaz Medina A01024592
-
-from datetime import datetime
-
-file1 = open('portfolio.txt', 'a')
-
-actionType = input("Qué tipo de producto compraste\n 1* Forward\n 2* Call/Put\n 3* Nota Estructurada\n 4* Buscar Average \n")
+import yfinance as yf
+import pandas as pd
+from datetime import datetime, date, timedelta
+import sys
+from pathlib import Path
 
 
-def forward():
-    file1.writelines("Forward \n")
-    actionName = input("Cuál es el nombre de la acción: ")
-    file1.writelines("Nombre: "+actionName+"\n")
+df = pd.read_csv('portfolio.csv', index_col=False)
+original_stdout = sys.stdout # Save a reference to the original standard output
 
-    price = input("Cuál fue el precio de la acción: ")
-    file1.writelines("Precio: "+price+"\n")
+pd.set_option('display.max_columns', None)
+pd.options.mode.chained_assignment = None 
 
-    fee = input("Cuál fue la comisión: ")
-    file1.writelines("Comisión: "+fee+"\n")
 
-    dateIf = input("Compraste la acción hoy? ")
-    if dateIf == "y" or "Y":
-        ndate = datetime.today().strftime('%Y-%m-%d')
-        file1.writelines("Fecha de Compra: "+ndate+"\n")
+def get_balance():
+    funds = open('funds.txt', 'r')
+    balance = float(funds.read())
+    funds.close()
+    return balance
+
+
+def update_balance(new_balance):
+    funds = open('funds.txt', 'w')
+    funds.write(str(new_balance))
+    funds.close()
+
+
+def display_portfolio():
+    funds = open('funds.txt', 'r')
+    balance = float(funds.read())
+    funds.close()
+
+    print("\n---")
+    print(df,"\n")
+    print("Your balance is: " + str(balance) + " USD")
+    print("\n---\n")
+
+
+def save_portfolio():
+    df.to_csv('portfolio.csv', index=False)
+    print("portfolio successfully saved!")
+
+
+run = True
+
+print("Loading...")
+
+
+def confirmationCard(operation, userInput, sharesQuantity, currentDate, cost, stockPrice):
+    print("Operation Type  | Spot\n")
+    print("Ticker          |",userInput,"\n")
+    print("Market          | Capitals\n")
+    print("Portfolio       | Nayra1316\n")
+    print("Buy/Sell        |", operation,"\n")
+    print("Date            |" , currentDate,"\n")
+    print("Quantity        |" , sharesQuantity,"\n")
+    print("Price           |", stockPrice,"\n" )
+    print("Cost            |" , str(cost),"\n")
+    print("Fee comission   | N/A")
+    print("IVA             | N/A")
+
+
+def buyStock():
+    print("Please introduce the shortname of the company you wish to buy stocks from:")
+    userInput = input()
+
+    print("Fetching stock price for " + userInput + "...\n")
+    ticker = yf.Ticker(userInput)
+    stockInfo = ticker.info
+
+    if stockInfo.get('regularMarketPrice') is not None:
+
+        currentPrice = stockInfo.get('currentPrice')
+        fullName = stockInfo.get('longName')
+
+        print("\nDo you wish to buy " + fullName + " stock at " + str(currentPrice) + " USD?")
+        print("YES - NO")
+        userInput2 = input()
+
+        if userInput2 == "YES":
+            print("How many shares do you wish to buy? ")
+            sharesQuantity = input()
+
+            cost = int(sharesQuantity) * currentPrice
+            currentBalance = get_balance()
+
+            if cost <= currentBalance:
+
+                today = date.today()
+                now = datetime.now()
+                currentDate = today.strftime("%d-%m-%Y")
+                currentTime = now.strftime("%H:%M:%S")
+
+                exists = False
+                index = -1
+
+                # update if exists:
+                global df 
+                for x in range(0, len(df)):
+                    if str(df['stock'][x]) == str(userInput):
+                        exists = True
+                        index = x
+
+                        break
+
+                if exists:
+
+                    df['quantity'][index] = df['quantity'][index] + int(sharesQuantity)
+                    df['bought_price'][index] = ((df['bought_price'][index] + currentPrice) / 2)
+                    df['date'][index] = currentDate
+                    df['hour'][index] = currentTime
+                    df['total_cost'][index] = df['total_cost'][index] + cost
+                    df['profit-loss'][index] = df['profit-loss'][index] - cost
+                    df['stocks_remaining'][index] = df['stocks_remaining'][index] + int(sharesQuantity)
+
+                else:
+                    new_row = {'stock': userInput, 'quantity': sharesQuantity, 'bought_price': currentPrice,
+                            'date': currentDate, 'hour': currentTime, 'total_cost': cost, 'quantity_sold': 0, 
+                            'sold_price': 0, 'total_sell': 0, 'profit-loss': (-1 * cost), 'date_sold': None, 
+                            'hour_sold': None, 'stocks_remaining': sharesQuantity}
+
+                    df = df.append(new_row, ignore_index=True)
+
+                print("\n"+str(sharesQuantity) + " shares of " + fullName + " stock bought successfully for " + str(cost)+"\n")
+                confCard = input("Do you want to see your confirmation card? YES/NO\n")
+                
+                fle = Path('confirmationOrder'+userInput+currentTime+currentDate+'.txt')
+                fle.touch(exist_ok=True)
+                f = open(fle, 'w')
+
+                sys.stdout = f # Change the standard output to the file we created.
+                confirmationCard("Buy", userInput, sharesQuantity, currentDate, cost, currentPrice)
+                sys.stdout = original_stdout # Reset the standard output to its original value
+
+
+                if confCard == "YES":
+                    confirmationCard("Buy", userInput, sharesQuantity, currentDate, cost, currentPrice)
+
+                save_portfolio()
+                update_balance(currentBalance - cost)
+
+            else:
+                print("Insufficient funds")
+
+        elif userInput2 == "NO":
+            print("Okey\n")
+        else:
+            print(userInput + " is not a valid option.")
+
     else:
-        date = input("Escribe la fecha en que compraste la acción en el siguiente formato Y-M-D (2022-02-28): \n")
-        file1.writelines("Fecha de Compra: "+date+"\n")
+        print("\nError: " + userInput + " stock couldn't be found. Please verify the shortname.\n")
 
-    file1.writelines("\n")
-    file1.writelines("\n")
+def catch_index_error(list,index):
+    try:
+        return list[index]
+    except IndexError:
+        return None
 
-def call():
-    print("call")
+def sellStock():
 
-def put():
-    print("put")
+    weStock = catch_index_error(df.iloc,0)
 
-def notaEstructurada():
-    print("Nota Estructurada")
+    if weStock is None :
+        print("You don't have any stocks")
+    else:
+        print("Please select the index of the stock you want to sell:")
+        userInput = int(input())
+        index = userInput
 
-def searchAveragePrice():
-    file2 = open('portfolio.txt', 'r')
-    if 'CME' in file2.read():
-        print("true")
+        row_data = df.iloc[index]
 
+        print(row_data)
 
-if actionType == "1":
-    forward()
-elif actionType == "2":
-    call()
-elif actionType == "3":
-    notaEstructurada()
-elif actionType == "4":
-    searchAveragePrice()
-else:
-    print("Ese producto no existe")
+        stockName = row_data.get('stock')
+        quantity = row_data.get('quantity')
 
+        print("\nYou have " + str(quantity) + " shares of " + stockName + " stock.")
+        print("How many shares do you wish to sell?")
+        userInput = input()
+        sellQuantity = userInput
 
-file1.close()
+        while int(userInput) > quantity or int(userInput) <= 0:  # TODO Check for types here
+            print("\n"+userInput + " is not a valid input.")
+            print("How many shares do you wish to sell?")
+            userInput = input()
+            sellQuantity = userInput
+
+        print("\nFetching stock price for " + stockName + "...\n")
+
+        ticker = yf.Ticker(stockName)
+        stockInfo = ticker.info
+
+        currentPrice = stockInfo.get('currentPrice')
+        fullName = stockInfo.get('longName')
+
+        print("Are you sure you wish to sell " + userInput + " stock of " + fullName + " for " + str(currentPrice) + " USD?\n")
+        print("YES - NO")
+        userInput = input()
+
+        if userInput == "YES":
+            today = date.today()
+            now = datetime.now()
+            currentDate = today.strftime("%d/%m/%Y")
+            currentTime = now.strftime("%H:%M:%S")
+            currentBalance = get_balance()
+            cash = int(currentPrice) * int(sellQuantity)
+
+            df['quantity_sold'][index] = int(sellQuantity)
+            df['sold_price'][index] = currentPrice
+            df['total_sell'][index] = cash
+            df['profit-loss'][index] = (cash - df['total_cost'][index])
+            df['date_sold'][index] = currentDate
+            df['hour_sold'][index] = currentTime
+            df['stocks_remaining'][index] = df['stocks_remaining'][index] - int(sellQuantity)
+
+            fle = Path('confirmationOrder'+userInput+currentTime+currentDate+'.txt')
+            fle.touch(exist_ok=True)
+            f = open(fle, 'w')
+
+            sys.stdout = f # Change the standard output to the file we created.
+            confirmationCard("Sell", userInput, sellQuantity, currentDate, cash, currentPrice)
+            sys.stdout = original_stdout # Reset the standard output to its original value
+
+            confCard = input("Do you want to see your confirmation card? YES/NO\n")
+            if confCard == "YES":
+                confirmationCard("Sell", userInput, sellQuantity, currentDate, cash, currentPrice)
+
+            save_portfolio()
+
+            update_balance(currentBalance + cash)
+
+            print("\nStock successfully sold!")
+
+while run:
+
+    print("Please select an option:")
+    print("Buy - Sell - Portfolio - Exit")
+    x = input()
+
+## Buy action 
+    if x == "Buy":
+        buyStock()
+## sell action
+    elif x == "Sell":
+        display_portfolio()
+        sellStock()
+
+    elif x == "Portfolio":
+        
+        print("Portfolio selected")
+
+        display_portfolio()
+
+    elif x == "Exit":
+        print("Exiting...")
+        run = False
+
+    else:
+        print("Please select a valid option:")
+

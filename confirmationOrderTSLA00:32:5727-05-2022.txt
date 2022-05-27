@@ -1,0 +1,20 @@
+Operation Type  | Spot
+
+Ticker          | TSLA 
+
+Market          | Capitals
+
+Portfolio       | Nayra1316
+
+Buy/Sell        | Buy 
+
+Date            | 27-05-2022 
+
+Quantity        | 10 
+
+Price           | 707.73 
+
+Cost            | 7077.3 
+
+Fee comission   | N/A
+IVA             | N/A
