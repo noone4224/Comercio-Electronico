@@ -1,9 +1,14 @@
+from random import random
+from time import sleep
+from turtle import forward
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, date, timedelta
 import sys
+import random
 from pathlib import Path
-
+from forex_python.converter import CurrencyRates
+c = CurrencyRates()
 
 df = pd.read_csv('portfolio.csv', index_col=False)
 original_stdout = sys.stdout # Save a reference to the original standard output
@@ -150,6 +155,63 @@ def buyStock():
     else:
         print("\nError: " + userInput + " stock couldn't be found. Please verify the shortname.\n")
 
+
+def buyForward():
+
+    print("Please introduce the name of the X currency you want to buy, X/Y example X/MXN\n")
+    userInput = input()
+
+    print("Please introduce the name of the Y currency you want to buy, X/Y example USD/Y\n")
+    userInputY = input()
+
+    price = c.get_rate(userInput, userInputY)
+    print("The current rate change is:", "{:.2f}".format(price))
+
+    currencyQuantity = input("How many "+userInput+" do you wish to buy?\n")
+    total = c.convert(userInput, userInputY, int(currencyQuantity))
+
+    print("The total at the current change will be: ", total)
+    daysExecute = input("How many days you will wait to execute your trade?\n")
+
+    forwardPrice = input("Please introduce the forward price you wish\n")
+    
+    print("Simulatioooooon ..........")
+    sleep(1)
+    finalPrice = random.uniform(float(forwardPrice)-1, float(forwardPrice)+1)
+    print("The price it's " , finalPrice)
+
+    profits = (float(forwardPrice) - float(finalPrice))*float(total)
+
+    print("Your profit it's:", profits)
+
+    today = date.today()
+    currentDate = today.strftime("%Y-%m-%d")
+
+    fle = Path('forwardConfirmationOrder'+userInput+currentDate+'.txt')
+    fle.touch(exist_ok=True)
+    f = open(fle, 'w')
+
+    sys.stdout = f # Change the standard output to the file we created.
+    print("Operation Type  | Forward\n")
+    print("Ticker          | "+userInput+"/"+userInputY+"\n")
+    print("Market          | Derivatives\n")
+    print("Portfolio       | Nayra1316\n")
+    print("Buy/Sell        | Buy \n")
+    print("Date            |", currentDate, "\n")
+    print("Quantity        |" , currencyQuantity,"\n")
+    print("Price           |", price,"\n" )
+    print("Cost            |" , str(finalPrice),"\n")
+    print("Exution Date    |", date.today() + timedelta(days = int(daysExecute)),"\n")
+    print("Final Profit    |", profits,"\n")
+    print("Fee comission   | N/A")
+    print("IVA             | N/A")
+    sys.stdout = original_stdout # Reset the standard output to its original value
+
+
+
+
+
+
 def catch_index_error(list,index):
     try:
         return list[index]
@@ -200,7 +262,7 @@ def sellStock():
         if userInput == "YES":
             today = date.today()
             now = datetime.now()
-            currentDate = today.strftime("%d/%m/%Y")
+            currentDate = today.strftime("%d-%m-%Y")
             currentTime = now.strftime("%H:%M:%S")
             currentBalance = get_balance()
             cash = int(currentPrice) * int(sellQuantity)
@@ -234,7 +296,7 @@ def sellStock():
 while run:
 
     print("Please select an option:")
-    print("Buy - Sell - Portfolio - Exit")
+    print("Buy - Sell - Portfolio - Forward - Exit")
     x = input()
 
 ## Buy action 
@@ -244,6 +306,9 @@ while run:
     elif x == "Sell":
         display_portfolio()
         sellStock()
+
+    elif x == "Forward":
+        buyForward()
 
     elif x == "Portfolio":
         
