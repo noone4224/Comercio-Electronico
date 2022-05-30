@@ -207,11 +207,6 @@ def buyForward():
     print("IVA             | N/A")
     sys.stdout = original_stdout # Reset the standard output to its original value
 
-
-
-
-
-
 def catch_index_error(list,index):
     try:
         return list[index]
@@ -293,10 +288,43 @@ def sellStock():
 
             print("\nStock successfully sold!")
 
+
+def moneyMarket():
+    print("The current rate of our CETE is 6.5% with a 16% of I.V.A on the rate during 1 year")
+    investment = input("How much do you wish to invest in our CETE? \n")
+    investment = float(investment)
+    totalTime = input("How many years do you want to invest?\n")
+    
+    interestType = input("Do you want 1 * Simple or 2 * Compound interest? \n")
+
+    i = 0
+    sum = 0.0
+    total = 0
+    if interestType == "1":
+        for i in range(int(totalTime)):
+            gains = 0.0
+            gains = investment * .065
+            sum += gains - (gains * .16)
+            print("Your gains in year "+ str(i) + " are: " + str(gains - (gains * .16)) + "\n")
+        print("Your total profit is: " + str(sum))
+    elif interestType == "2":
+        for i in range(int(totalTime)):
+            gainsAfterFees = 0
+            gains = investment * .065
+
+            gainsAfterFees = gains - (gains*.16)
+
+            investment += gainsAfterFees
+            total += gainsAfterFees
+
+            print("Your gains in year "+ str(i) + " are: " + str(gainsAfterFees) + "\n")
+            print(total)
+        print("Your total profit is: " + str(total))
+
 while run:
 
     print("Please select an option:")
-    print("Buy - Sell - Portfolio - Forward - Exit")
+    print("Buy - Sell - Portfolio - Forward - MoneyMarket - Exit")
     x = input()
 
 ## Buy action 
@@ -309,7 +337,8 @@ while run:
 
     elif x == "Forward":
         buyForward()
-
+    elif x == "MoneyMarket":
+        moneyMarket()
     elif x == "Portfolio":
         
         print("Portfolio selected")
