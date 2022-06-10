@@ -1,0 +1,20 @@
+Operation Type  | Spot
+
+Ticker          | YES 
+
+Market          | Capitals
+
+Portfolio       | Nayra1316
+
+Buy/Sell        | Sell 
+
+Date            | 09-06-2022 
+
+Quantity        | 220 
+
+Price           | 719.12 
+
+Cost            | 158180 
+
+Fee comission   | N/A
+IVA             | N/A

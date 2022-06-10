@@ -1,2 +1,2 @@
-stock,quantity,bought_price,date,hour,total_cost,quantity_sold,sold_price,profit-loss,date_sold,hour_sold,total_sell,stocks_remaining
-TSLA,20,603,27-05-2022,00:35:33,12077,0,0,-12077,,,0,20
+stock,quantity,bought_price,date,hour,total_cost,last_quantity_sold,last_sold_price,profit-loss,date_sold,hour_sold,total_sell
+TSLA,100,690,09-06-2022,20:10:53,227813,220,719,-69633,09-06-2022,20:08:39,158180

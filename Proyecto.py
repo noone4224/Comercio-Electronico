@@ -8,6 +8,7 @@ import sys
 import random
 from pathlib import Path
 from forex_python.converter import CurrencyRates
+from tabulate import tabulate 
 c = CurrencyRates()
 
 df = pd.read_csv('portfolio.csv', index_col=False)
@@ -47,9 +48,6 @@ def save_portfolio():
 
 
 run = True
-
-print("Loading...")
-
 
 def confirmationCard(operation, userInput, sharesQuantity, currentDate, cost, stockPrice):
     print("Operation Type  | Spot\n")
@@ -116,13 +114,12 @@ def buyStock():
                     df['hour'][index] = currentTime
                     df['total_cost'][index] = df['total_cost'][index] + cost
                     df['profit-loss'][index] = df['profit-loss'][index] - cost
-                    df['stocks_remaining'][index] = df['stocks_remaining'][index] + int(sharesQuantity)
 
                 else:
                     new_row = {'stock': userInput, 'quantity': sharesQuantity, 'bought_price': currentPrice,
-                            'date': currentDate, 'hour': currentTime, 'total_cost': cost, 'quantity_sold': 0, 
-                            'sold_price': 0, 'total_sell': 0, 'profit-loss': (-1 * cost), 'date_sold': None, 
-                            'hour_sold': None, 'stocks_remaining': sharesQuantity}
+                            'date': currentDate, 'hour': currentTime, 'total_cost': cost, 'last_quantity_sold': 0, 
+                            'last_sold_price': 0, 'total_sell': 0, 'profit-loss': (-1 * cost), 'date_sold': None, 
+                            'hour_sold': None}
 
                     df = df.append(new_row, ignore_index=True)
 
@@ -261,14 +258,13 @@ def sellStock():
             currentTime = now.strftime("%H:%M:%S")
             currentBalance = get_balance()
             cash = int(currentPrice) * int(sellQuantity)
-
-            df['quantity_sold'][index] = int(sellQuantity)
-            df['sold_price'][index] = currentPrice
+            df['quantity'][index] = df['quantity'][index] -int(sellQuantity)
+            df['last_quantity_sold'][index] = int(sellQuantity)
+            df['last_sold_price'][index] = currentPrice
             df['total_sell'][index] = cash
             df['profit-loss'][index] = (cash - df['total_cost'][index])
             df['date_sold'][index] = currentDate
             df['hour_sold'][index] = currentTime
-            df['stocks_remaining'][index] = df['stocks_remaining'][index] - int(sellQuantity)
 
             fle = Path('confirmationOrder'+userInput+currentTime+currentDate+'.txt')
             fle.touch(exist_ok=True)
@@ -321,10 +317,38 @@ def moneyMarket():
             print(total)
         print("Your total profit is: " + str(total))
 
+def getVar():
+    
+    print("Please introduce the shortname of the company you wish to make a VaR:")
+    userInput = input()
+
+    stocksQuantity = input("How much Shares do you want simulate?\n")
+    ticker = yf.Ticker(userInput)
+    stockInfo = ticker.info
+    startDate = input("Can you give me your startDate in the following format Year-Month-Day (2021-11-26)\n")
+
+    today = date.today()
+    currentDate = today.strftime("%Y-%m-%d")
+    if stockInfo.get('regularMarketPrice') is not None:
+        df = yf.download(userInput, startDate , currentDate) 
+        df = df[['Close']]
+        df['returns'] = df.Close.pct_change()
+        df = df.dropna()
+
+        df.sort_values('returns', inplace= True, ascending = True)
+
+        inv  = stockInfo.get('regularMarketPrice') * int(stocksQuantity)
+        VaR_90= df['returns'].quantile(0.1)
+        VaR_95= df['returns'].quantile(0.05)
+        VaR_99= df['returns'].quantile(0.01)
+        print(tabulate([['90%', VaR_90, VaR_90*inv], ['95%', VaR_95, VaR_95*inv], ["99%", VaR_99, VaR_99*inv]], headers=['Confidence Level', 'Value at Risk', 'Total P/L']))
+    else:
+        print("Your Stock doesn't exist, try again")
+
 while run:
 
     print("Please select an option:")
-    print("Buy - Sell - Portfolio - Forward - MoneyMarket - Exit")
+    print("Buy - Sell - Portfolio - Forward - MoneyMarket - VAR - Exit")
     x = input()
 
 ## Buy action 
@@ -340,11 +364,10 @@ while run:
     elif x == "MoneyMarket":
         moneyMarket()
     elif x == "Portfolio":
-        
         print("Portfolio selected")
-
         display_portfolio()
-
+    elif x == "VAR":    
+        getVar()
     elif x == "Exit":
         print("Exiting...")
         run = False
