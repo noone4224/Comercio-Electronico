@@ -258,6 +258,7 @@ def sellStock():
             currentTime = now.strftime("%H:%M:%S")
             currentBalance = get_balance()
             cash = int(currentPrice) * int(sellQuantity)
+            df['total_cost'][index] = df['total_cost'][index] - cash
             df['quantity'][index] = df['quantity'][index] -int(sellQuantity)
             df['last_quantity_sold'][index] = int(sellQuantity)
             df['last_sold_price'][index] = currentPrice
@@ -266,24 +267,23 @@ def sellStock():
             df['date_sold'][index] = currentDate
             df['hour_sold'][index] = currentTime
 
-            fle = Path('confirmationOrder'+userInput+currentTime+currentDate+'.txt')
+            fle = Path('confirmationOrder'+stockName+currentTime+currentDate+'.txt')
             fle.touch(exist_ok=True)
             f = open(fle, 'w')
 
             sys.stdout = f # Change the standard output to the file we created.
-            confirmationCard("Sell", userInput, sellQuantity, currentDate, cash, currentPrice)
+            confirmationCard("Sell", stockName, sellQuantity, currentDate, cash, currentPrice)
             sys.stdout = original_stdout # Reset the standard output to its original value
 
             confCard = input("Do you want to see your confirmation card? YES/NO\n")
             if confCard == "YES":
-                confirmationCard("Sell", userInput, sellQuantity, currentDate, cash, currentPrice)
+                confirmationCard("Sell", stockName, sellQuantity, currentDate, cash, currentPrice)
 
             save_portfolio()
 
             update_balance(currentBalance + cash)
 
             print("\nStock successfully sold!")
-
 
 def moneyMarket():
     print("The current rate of our CETE is 6.5% with a 16% of I.V.A on the rate during 1 year")

@@ -1,0 +1,24 @@
+Operation Type  | Forward
+
+Ticker          | USD/MXN
+
+Market          | Derivatives
+
+Portfolio       | Nayra1316
+
+Buy/Sell        | Buy 
+
+Date            | 2022-06-11 
+
+Quantity        | 1000 
+
+Price           | 19.690395159765547 
+
+Cost            | 18.824982181032155 
+
+Exution Date    | 2022-12-08 
+
+Final Profit    | -16244.225144288368 
+
+Fee comission   | N/A
+IVA             | N/A

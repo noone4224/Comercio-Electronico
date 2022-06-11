@@ -1,6 +1,6 @@
 Operation Type  | Spot
 
-Ticker          | YES 
+Ticker          | TSLA 
 
 Market          | Capitals
 
